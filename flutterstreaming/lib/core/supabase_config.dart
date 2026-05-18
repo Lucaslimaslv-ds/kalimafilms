@@ -1,22 +1,51 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/video.dart';
 
 class SupabaseConfig {
   // =========================================================================
   // SUPABASE CREDENTIALS
-  // Altere os valores abaixo com as credenciais do seu projeto Supabase
+  // Carrega dinamicamente a partir do arquivo .env ou do fallback do protótipo
   // =========================================================================
-  static const String supabaseUrl = 'https://seu-projeto.supabase.co';
-  static const String supabaseAnonKey = 'sua-anon-key-aqui';
+  static String get supabaseUrl {
+    String url = dotenv.env['SUPABASE_URL'] ?? 'https://seu-projeto.supabase.co';
+    // Remove aspas simples e duplas de segurança
+    url = url.trim().replaceAll('"', '').replaceAll("'", "");
+    // Remove barra no final se existir
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    // Corrige caso o usuário tenha colado a URL da API do REST por engano
+    if (url.endsWith('/rest/v1')) {
+      url = url.substring(0, url.length - 8);
+    }
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    return url;
+  }
+
+  static String get supabaseAnonKey {
+    String key = dotenv.env['SUPABASE_ANON_KEY'] ?? 'sua-anon-key-aqui';
+    // Remove aspas de segurança
+    return key.trim().replaceAll('"', '').replaceAll("'", "");
+  }
 
   static bool isInitialized = false;
   static bool demoLoggedIn = false;
   static String demoEmail = '';
 
-  /// Inicializa o Supabase. Caso as credenciais padrão não tenham sido alteradas,
-  /// o app irá rodar em modo de demonstração com dados locais para evitar travamentos.
   static Future<void> init() async {
-    if (supabaseUrl == 'https://seu-projeto.supabase.co' || supabaseAnonKey == 'sua-anon-key-aqui') {
+    print('=== KALIMAFILMS SUPABASE INIT ===');
+    print('URL resolvida: "$supabaseUrl"');
+    if (supabaseAnonKey.length > 10) {
+      print('Chave resolvida: "${supabaseAnonKey.substring(0, 8)}...${supabaseAnonKey.substring(supabaseAnonKey.length - 8)}"');
+    } else {
+      print('Chave resolvida: "$supabaseAnonKey"');
+    }
+    print('=================================');
+
+    if (supabaseUrl == 'https://seu-projeto.supabase.co' || supabaseAnonKey == 'sua-anon-key-aqui' || supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
       print('Aviso: Supabase rodando em modo DEMO/LOCAL. Configure as chaves reais para persistência remota.');
       isInitialized = false;
       return;
